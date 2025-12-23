@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product API Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a9eff;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .search-section {
+            background: #1e1e2e;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-form {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            flex: 1;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #b0b0b0;
+            font-weight: 500;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            background: #2a2a3e;
+            border: 2px solid #3a3a4e;
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #4a9eff;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: #4a9eff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background: #3a8eef;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .form-section {
+            background: #1e1e2e;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .form-section h2 {
+            color: #4a9eff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3a3a4e;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .form-row {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-row.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .array-input {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 5px;
+        }
+
+        .array-input input {
+            flex: 1;
+        }
+
+        .array-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .array-tag {
+            background: #3a3a4e;
+            padding: 6px 12px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .array-tag button {
+            background: #ff4444;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        .add-array-item {
+            margin-top: 10px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .btn-save {
+            background: #28a745;
+            padding: 15px 40px;
+            font-size: 18px;
+        }
+
+        .btn-save:hover {
+            background: #218838;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #28a745;
+            color: white;
+            display: block;
+        }
+
+        .message.error {
+            background: #dc3545;
+            color: white;
+            display: block;
+        }
+
+        .message.info {
+            background: #17a2b8;
+            color: white;
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #4a9eff;
+        }
+
+        .tag-input-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .tag-input-group input {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Product API Manager</h1>
+
+        <div id="message" class="message"></div>
+
+        <div class="search-section">
+            <form class="search-form" id="searchForm">
+                <div class="form-group">
+                    <label for="pluSearch">Search Product by PLU</label>
+                    <input type="number" id="pluSearch" placeholder="Enter PLU (e.g., 405003)" required>
+                </div>
+                <button type="submit">Get Product</button>
+            </form>
+        </div>
+
+        <div id="productForm" style="display: none;">
+            <div class="form-section">
+                <h2>Basic Information</h2>
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label for="ProductId">Product ID</label>
+                        <input type="number" id="ProductId" readonly>
+                    </div>
+                    <div class="form-row">
+                        <label for="PLU">PLU *</label>
+                        <input type="number" id="PLU" required>
+                    </div>
+                    <div class="form-row">
+                        <label for="Name">Name</label>
+                        <input type="text" id="Name">
+                    </div>
+                    <div class="form-row">
+                        <label for="POSDisplay">POS Display</label>
+                        <input type="text" id="POSDisplay">
+                    </div>
+                    <div class="form-row">
+                        <label for="OnlineName">Online Name</label>
+                        <input type="text" id="OnlineName">
+                    </div>
+                    <div class="form-row">
+                        <label for="OnlineDescription">Online Description</label>
+                        <textarea id="OnlineDescription" rows="3"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <label for="Description">Description</label>
+                        <textarea id="Description" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Category & Classification</h2>
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label for="Category">Category</label>
+                        <input type="text" id="Category">
+                    </div>
+                    <div class="form-row">
+                        <label for="CategoryId">Category ID</label>
+                        <input type="number" id="CategoryId">
+                    </div>
+                    <div class="form-row">
+                        <label for="Templates">Templates (comma-separated numbers)</label>
+                        <input type="text" id="Templates" placeholder="e.g., 1,2,3">
+                        <div class="checkbox-group" style="margin-top: 8px;">
+                            <input type="checkbox" id="IncludeTemplates">
+                            <label for="IncludeTemplates" style="font-size: 12px; color: #ffa500;">Include Templates in update (may cause foreign key errors)</label>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label for="Families">Families (comma-separated numbers)</label>
+                        <input type="text" id="Families" placeholder="e.g., 1,2,3">
+                        <div class="checkbox-group" style="margin-top: 8px;">
+                            <input type="checkbox" id="IncludeFamilies">
+                            <label for="IncludeFamilies" style="font-size: 12px; color: #ffa500;">Include Families in update (may cause foreign key errors)</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Status & Flags</h2>
+                <div class="form-grid">
+                    <div class="form-row checkbox-group">
+                        <input type="checkbox" id="IsActive">
+                        <label for="IsActive">Is Active</label>
+                    </div>
+                    <div class="form-row checkbox-group">
+                        <input type="checkbox" id="IsMandatory">
+                        <label for="IsMandatory">Is Mandatory</label>
+                    </div>
+                    <div class="form-row checkbox-group">
+                        <input type="checkbox" id="IsInstruction">
+                        <label for="IsInstruction">Is Instruction</label>
+                    </div>
+                    <div class="form-row checkbox-group">
+                        <input type="checkbox" id="IsTaxable">
+                        <label for="IsTaxable">Is Taxable</label>
+                    </div>
+                    <div class="form-row checkbox-group">
+                        <input type="checkbox" id="CanBeSold">
+                        <label for="CanBeSold">Can Be Sold</label>
+                    </div>
+                    <div class="form-row checkbox-group">
+                        <input type="checkbox" id="IsRedeemable">
+                        <label for="IsRedeemable">Is Redeemable</label>
+                    </div>
+                    <div class="form-row checkbox-group">
+                        <input type="checkbox" id="AssignSequenceNumber">
+                        <label for="AssignSequenceNumber">Assign Sequence Number</label>
+                    </div>
+                    <div class="form-row checkbox-group">
+                        <input type="checkbox" id="IsRoyaltyProduct">
+                        <label for="IsRoyaltyProduct">Is Royalty Product</label>
+                    </div>
+                    <div class="form-row checkbox-group">
+                        <input type="checkbox" id="IsAutoAdd">
+                        <label for="IsAutoAdd">Is Auto Add</label>
+                    </div>
+                    <div class="form-row checkbox-group">
+                        <input type="checkbox" id="HideFromCustomer">
+                        <label for="HideFromCustomer">Hide From Customer</label>
+                    </div>
+                    <div class="form-row checkbox-group">
+                        <input type="checkbox" id="IsFractional">
+                        <label for="IsFractional">Is Fractional</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Product Details</h2>
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label for="IndentationLevel">Indentation Level</label>
+                        <input type="number" id="IndentationLevel">
+                    </div>
+                    <div class="form-row">
+                        <label for="UnitSize">Unit Size</label>
+                        <input type="number" id="UnitSize" step="0.01">
+                    </div>
+                    <div class="form-row">
+                        <label for="SizeTypeID">Size Type ID</label>
+                        <input type="number" id="SizeTypeID">
+                    </div>
+                    <div class="form-row">
+                        <label for="SizeTypeName">Size Type Name</label>
+                        <input type="text" id="SizeTypeName">
+                    </div>
+                    <div class="form-row">
+                        <label for="SizeQty">Size Quantity</label>
+                        <input type="number" id="SizeQty" step="0.01">
+                    </div>
+                    <div class="form-row">
+                        <label for="GLCode">GL Code</label>
+                        <input type="text" id="GLCode">
+                    </div>
+                    <div class="form-row">
+                        <label for="BackgroundColor">Background Color</label>
+                        <input type="text" id="BackgroundColor" placeholder="e.g., #FF5733">
+                    </div>
+                    <div class="form-row">
+                        <label for="KMSDisplay">KMS Display <span style="color: #ffa500;">(required, min 3 characters)</span></label>
+                        <input type="text" id="KMSDisplay" minlength="3" required>
+                    </div>
+                    <div class="form-row">
+                        <label for="Kilojoules">Kilojoules</label>
+                        <input type="number" id="Kilojoules" step="0.01">
+                    </div>
+                    <div class="form-row">
+                        <label for="TaxPercentage">Tax Percentage</label>
+                        <input type="number" id="TaxPercentage" step="0.01">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Additional Information</h2>
+                <div class="form-grid">
+                    <div class="form-row">
+                        <label for="LastChangedDate">Last Changed Date</label>
+                        <input type="text" id="LastChangedDate" readonly>
+                    </div>
+                    <div class="form-row">
+                        <label for="ExternalProductID">External Product ID</label>
+                        <input type="text" id="ExternalProductID">
+                    </div>
+                    <div class="form-row">
+                        <label for="ProductInformation">Product Information</label>
+                        <textarea id="ProductInformation" rows="3"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <label for="ProductNotes">Product Notes</label>
+                        <textarea id="ProductNotes" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>Tags</h2>
+                <div class="form-grid">
+                    <div class="form-row full-width">
+                        <label>Dietary Tags</label>
+                        <div id="DietaryTagsContainer">
+                            <div class="tag-input-group">
+                                <input type="number" id="DietaryTagId" placeholder="Tag ID">
+                                <input type="text" id="DietaryTagName" placeholder="Tag Name">
+                                <button type="button" onclick="addDietaryTag()">Add Tag</button>
+                            </div>
+                            <div id="DietaryTagsList" class="array-items"></div>
+                        </div>
+                    </div>
+                    <div class="form-row full-width">
+                        <label>Universal Tags</label>
+                        <div id="UniversalTagsContainer">
+                            <div class="tag-input-group">
+                                <input type="number" id="UniversalTagId" placeholder="Tag ID">
+                                <input type="text" id="UniversalTagName" placeholder="Tag Name">
+                                <button type="button" onclick="addUniversalTag()">Add Tag</button>
+                            </div>
+                            <div id="UniversalTagsList" class="array-items"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button type="button" class="btn-save" onclick="saveProduct()">Save Product</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://gyguatapi.xchangefusion.com/api/v3/products';
+        const CLIENT_APP_KEY = 'd5f7d501-ffc6-4002-ac7a-f18a8cdd59e4';
+        
+        let dietaryTags = [];
+        let universalTags = [];
+
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            setTimeout(() => {
+                messageEl.className = 'message';
+            }, 5000);
+        }
+
+        function getHeaders() {
+            return {
+                'Accept': 'application/json',
+                'ClientAppKey': CLIENT_APP_KEY,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            };
+        }
+
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const plu = document.getElementById('pluSearch').value;
+            
+            if (!plu) {
+                showMessage('Please enter a PLU', 'error');
+                return;
+            }
+
+            showMessage('Loading product...', 'info');
+
+            try {
+                const response = await fetch(`${API_BASE_URL}?PLU=${plu}`, {
+                    method: 'GET',
+                    headers: getHeaders()
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.Items && data.Items.length > 0) {
+                    populateForm(data.Items[0]);
+                    showMessage('Product loaded successfully!', 'success');
+                } else {
+                    showMessage('No product found with this PLU', 'error');
+                }
+            } catch (error) {
+                showMessage(`Error: ${error.message}`, 'error');
+                console.error('Error:', error);
+            }
+        });
+
+        function populateForm(product) {
+            // Basic fields
+            document.getElementById('ProductId').value = product.ProductId || '';
+            document.getElementById('PLU').value = product.PLU || '';
+            document.getElementById('Name').value = product.Name || '';
+            document.getElementById('POSDisplay').value = product.POSDisplay || '';
+            document.getElementById('OnlineName').value = product.OnlineName || '';
+            document.getElementById('OnlineDescription').value = product.OnlineDescription || '';
+            document.getElementById('Description').value = product.Description || '';
+
+            // Category
+            document.getElementById('Category').value = product.Category || '';
+            document.getElementById('CategoryId').value = product.CategoryId || '';
+            document.getElementById('Templates').value = product.Templates ? product.Templates.join(',') : '';
+            document.getElementById('Families').value = product.Families ? product.Families.join(',') : '';
+
+            // Checkboxes
+            document.getElementById('IsActive').checked = product.IsActive || false;
+            document.getElementById('IsMandatory').checked = product.IsMandatory || false;
+            document.getElementById('IsInstruction').checked = product.IsInstruction || false;
+            document.getElementById('IsTaxable').checked = product.IsTaxable || false;
+            document.getElementById('CanBeSold').checked = product.CanBeSold || false;
+            document.getElementById('IsRedeemable').checked = product.IsRedeemable || false;
+            document.getElementById('AssignSequenceNumber').checked = product.AssignSequenceNumber || false;
+            document.getElementById('IsRoyaltyProduct').checked = product.IsRoyaltyProduct || false;
+            document.getElementById('IsAutoAdd').checked = product.IsAutoAdd || false;
+            document.getElementById('HideFromCustomer').checked = product.HideFromCustomer || false;
+            document.getElementById('IsFractional').checked = product.IsFractional || false;
+
+            // Details
+            document.getElementById('IndentationLevel').value = product.IndentationLevel || '';
+            document.getElementById('UnitSize').value = product.UnitSize || '';
+            document.getElementById('SizeTypeID').value = product.SizeTypeID || '';
+            document.getElementById('SizeTypeName').value = product.SizeTypeName || '';
+            document.getElementById('SizeQty').value = product.SizeQty || '';
+            document.getElementById('GLCode').value = product.GLCode || '';
+            document.getElementById('BackgroundColor').value = product.BackgroundColor || '';
+            document.getElementById('KMSDisplay').value = product.KMSDisplay || '';
+            document.getElementById('Kilojoules').value = product.Kilojoules || '';
+            document.getElementById('TaxPercentage').value = product.TaxPercentage || '';
+
+            // Additional
+            document.getElementById('LastChangedDate').value = product.LastChangedDate || '';
+            document.getElementById('ExternalProductID').value = product.ExternalProductID || '';
+            document.getElementById('ProductInformation').value = product.ProductInformation || '';
+            document.getElementById('ProductNotes').value = product.ProductNotes || '';
+
+            // Tags
+            dietaryTags = product.DietaryTags || [];
+            universalTags = product.UniversalTags || [];
+            renderTags();
+
+            document.getElementById('productForm').style.display = 'block';
+        }
+
+        function addDietaryTag() {
+            const id = document.getElementById('DietaryTagId').value;
+            const name = document.getElementById('DietaryTagName').value;
+            
+            if (id && name) {
+                dietaryTags.push({ Id: parseInt(id), Name: name });
+                document.getElementById('DietaryTagId').value = '';
+                document.getElementById('DietaryTagName').value = '';
+                renderTags();
+            }
+        }
+
+        function addUniversalTag() {
+            const id = document.getElementById('UniversalTagId').value;
+            const name = document.getElementById('UniversalTagName').value;
+            
+            if (id && name) {
+                universalTags.push({ Id: parseInt(id), Name: name });
+                document.getElementById('UniversalTagId').value = '';
+                document.getElementById('UniversalTagName').value = '';
+                renderTags();
+            }
+        }
+
+        function removeDietaryTag(index) {
+            dietaryTags.splice(index, 1);
+            renderTags();
+        }
+
+        function removeUniversalTag(index) {
+            universalTags.splice(index, 1);
+            renderTags();
+        }
+
+        function renderTags() {
+            const dietaryList = document.getElementById('DietaryTagsList');
+            dietaryList.innerHTML = dietaryTags.map((tag, index) => 
+                `<div class="array-tag">
+                    <span>ID: ${tag.Id}, Name: ${tag.Name}</span>
+                    <button type="button" onclick="removeDietaryTag(${index})">Remove</button>
+                </div>`
+            ).join('');
+
+            const universalList = document.getElementById('UniversalTagsList');
+            universalList.innerHTML = universalTags.map((tag, index) => 
+                `<div class="array-tag">
+                    <span>ID: ${tag.Id}, Name: ${tag.Name}</span>
+                    <button type="button" onclick="removeUniversalTag(${index})">Remove</button>
+                </div>`
+            ).join('');
+        }
+
+        function getFormData() {
+            const includeTemplates = document.getElementById('IncludeTemplates').checked;
+            const includeFamilies = document.getElementById('IncludeFamilies').checked;
+            
+            const templates = includeTemplates && document.getElementById('Templates').value
+                ? document.getElementById('Templates').value.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n))
+                : null;
+            
+            const families = includeFamilies && document.getElementById('Families').value
+                ? document.getElementById('Families').value.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n))
+                : null;
+
+            const data = {
+                ProductId: document.getElementById('ProductId').value ? parseInt(document.getElementById('ProductId').value) : null,
+                PLU: parseInt(document.getElementById('PLU').value),
+                Name: document.getElementById('Name').value || null,
+                POSDisplay: document.getElementById('POSDisplay').value || null,
+                OnlineName: document.getElementById('OnlineName').value || null,
+                OnlineDescription: document.getElementById('OnlineDescription').value || null,
+                Description: document.getElementById('Description').value || null,
+                Category: document.getElementById('Category').value || null,
+                CategoryId: document.getElementById('CategoryId').value ? parseInt(document.getElementById('CategoryId').value) : null,
+                IsActive: document.getElementById('IsActive').checked,
+                IsMandatory: document.getElementById('IsMandatory').checked,
+                IsInstruction: document.getElementById('IsInstruction').checked,
+                IndentationLevel: document.getElementById('IndentationLevel').value ? parseInt(document.getElementById('IndentationLevel').value) : null,
+                IsTaxable: document.getElementById('IsTaxable').checked,
+                ExternalProductID: document.getElementById('ExternalProductID').value || null,
+                ProductInformation: document.getElementById('ProductInformation').value || null,
+                ProductNotes: document.getElementById('ProductNotes').value || null,
+                CanBeSold: document.getElementById('CanBeSold').checked,
+                IsRedeemable: document.getElementById('IsRedeemable').checked,
+                AssignSequenceNumber: document.getElementById('AssignSequenceNumber').checked,
+                IsRoyaltyProduct: document.getElementById('IsRoyaltyProduct').checked,
+                IsAutoAdd: document.getElementById('IsAutoAdd').checked,
+                UnitSize: document.getElementById('UnitSize').value ? parseFloat(document.getElementById('UnitSize').value) : null,
+                SizeTypeID: document.getElementById('SizeTypeID').value ? parseInt(document.getElementById('SizeTypeID').value) : null,
+                SizeTypeName: document.getElementById('SizeTypeName').value || null,
+                SizeQty: document.getElementById('SizeQty').value ? parseFloat(document.getElementById('SizeQty').value) : null,
+                GLCode: document.getElementById('GLCode').value || null,
+                BackgroundColor: document.getElementById('BackgroundColor').value || null,
+                KMSDisplay: document.getElementById('KMSDisplay').value.trim() || null,
+                Kilojoules: document.getElementById('Kilojoules').value ? parseFloat(document.getElementById('Kilojoules').value) : null,
+                DietaryTags: dietaryTags.length > 0 ? dietaryTags : null,
+                UniversalTags: universalTags.length > 0 ? universalTags : null,
+                HideFromCustomer: document.getElementById('HideFromCustomer').checked,
+                IsFractional: document.getElementById('IsFractional').checked,
+                TaxPercentage: document.getElementById('TaxPercentage').value ? parseFloat(document.getElementById('TaxPercentage').value) : null
+            };
+
+            // Only include Templates and Families if explicitly enabled
+            if (includeTemplates && templates && templates.length > 0) {
+                data.Templates = templates;
+            }
+            
+            if (includeFamilies && families && families.length > 0) {
+                data.Families = families;
+            }
+
+            // Remove null values
+            Object.keys(data).forEach(key => {
+                if (data[key] === null || data[key] === '') {
+                    delete data[key];
+                }
+            });
+
+            return data;
+        }
+
+        async function saveProduct() {
+            // Validate KMSDisplay before proceeding
+            const kmsDisplay = document.getElementById('KMSDisplay').value.trim();
+            if (!kmsDisplay || kmsDisplay.length < 3) {
+                showMessage('KMS Display is required and must be at least 3 characters long', 'error');
+                document.getElementById('KMSDisplay').focus();
+                return;
+            }
+
+            const formData = getFormData();
+            
+            if (!formData.PLU) {
+                showMessage('PLU is required', 'error');
+                return;
+            }
+
+            showMessage('Saving product...', 'info');
+
+            try {
+                // Convert to form-urlencoded format
+                const formBody = Object.keys(formData).map(key => {
+                    const value = formData[key];
+                    if (Array.isArray(value)) {
+                        return `${key}=${encodeURIComponent(JSON.stringify(value))}`;
+                    } else if (typeof value === 'object' && value !== null) {
+                        return `${key}=${encodeURIComponent(JSON.stringify(value))}`;
+                    } else {
+                        return `${key}=${encodeURIComponent(value)}`;
+                    }
+                }).join('&');
+
+                const response = await fetch(API_BASE_URL, {
+                    method: 'PUT',
+                    headers: getHeaders(),
+                    body: formBody
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    let errorMessage = `HTTP error! status: ${response.status}`;
+                    
+                    try {
+                        const errorJson = JSON.parse(errorText);
+                        if (errorJson.Message) {
+                            errorMessage += `\n\n${errorJson.Message}`;
+                            
+                            // Check for foreign key constraint errors
+                            if (errorJson.Message.includes('FOREIGN KEY constraint')) {
+                                if (errorJson.Message.includes('Templates')) {
+                                    errorMessage += '\n\nTip: Templates field is causing a foreign key error. Uncheck "Include Templates in update" to exclude it.';
+                                } else if (errorJson.Message.includes('Families')) {
+                                    errorMessage += '\n\nTip: Families field is causing a foreign key error. Uncheck "Include Families in update" to exclude it.';
+                                }
+                            }
+                            
+                            // Check for KMSDisplay validation errors
+                            if (errorJson.Message.includes('KMSDisplay')) {
+                                errorMessage += '\n\nTip: KMS Display field is required and must be at least 3 characters long.';
+                            }
+                        }
+                    } catch (e) {
+                        errorMessage += `\n\n${errorText}`;
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+
+                const result = await response.json();
+                showMessage('Product saved successfully!', 'success');
+                console.log('Save result:', result);
+            } catch (error) {
+                showMessage(`Error saving product: ${error.message}`, 'error');
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
+
