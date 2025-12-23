@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Product Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a9eff;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .search-section {
+            background: #1e1e2e;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #b0b0b0;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            background: #2a2a3e;
+            border: 2px solid #3a3a4e;
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        textarea {
+            min-height: 100px;
+            font-family: monospace;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #4a9eff;
+        }
+
+        button {
+            padding: 12px 30px;
+            background: #4a9eff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background: #3a8eef;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-save {
+            background: #28a745;
+            padding: 15px 40px;
+            font-size: 18px;
+        }
+
+        .btn-save:hover {
+            background: #218838;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #28a745;
+            color: white;
+            display: block;
+        }
+
+        .message.error {
+            background: #dc3545;
+            color: white;
+            display: block;
+        }
+
+        .message.info {
+            background: #17a2b8;
+            color: white;
+            display: block;
+        }
+
+        .table-container {
+            background: #1e1e2e;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            overflow-x: auto;
+            display: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #2a2a3e;
+            table-layout: fixed;
+        }
+
+        th {
+            background: #3a3a4e;
+            color: #4a9eff;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            position: relative;
+            min-width: 80px;
+        }
+
+        th .resizer {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 5px;
+            height: 100%;
+            cursor: col-resize;
+            user-select: none;
+            background: transparent;
+            z-index: 11;
+        }
+
+        th .resizer:hover {
+            background: #4a9eff;
+        }
+
+        th.resizing .resizer {
+            background: #4a9eff;
+        }
+
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #3a3a4e;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        tr:hover {
+            background: #33334e;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="checkbox"],
+        select {
+            width: 100%;
+            padding: 6px;
+            background: #1e1e2e;
+            border: 1px solid #3a3a4e;
+            border-radius: 4px;
+            color: #e0e0e0;
+            font-size: 12px;
+        }
+
+        select option {
+            background: #2a2a3e;
+            color: #e0e0e0;
+            padding: 8px;
+        }
+
+        select option:checked {
+            background: #4a9eff;
+            color: white;
+        }
+
+        input[type="checkbox"] {
+            width: auto;
+            cursor: pointer;
+        }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #4a9eff;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #2a2a3e;
+            border-radius: 6px;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4a9eff;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #b0b0b0;
+            margin-top: 5px;
+        }
+
+        .column-toggle {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #2a2a3e;
+            border-radius: 6px;
+        }
+
+        .column-toggle label {
+            display: inline-block;
+            margin-right: 15px;
+            margin-bottom: 5px;
+        }
+
+        .column-toggle input[type="checkbox"] {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bulk Product Editor</h1>
+
+        <div id="message" class="message"></div>
+
+        <div class="search-section">
+            <div class="search-options">
+                <div class="form-group">
+                    <label for="pluInput">Search by PLUs (comma or line separated)</label>
+                    <textarea id="pluInput" placeholder="405003, 100001, 100002&#10;Or one per line"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="categoryInput">Search by Categories</label>
+                    <select id="categoryInput" multiple size="5" style="width: 100%; padding: 12px; background: #2a2a3e; border: 2px solid #3a3a4e; border-radius: 6px; color: #e0e0e0; font-size: 14px;">
+                        <option value="">Loading categories...</option>
+                    </select>
+                    <small style="color: #b0b0b0; margin-top: 5px; display: block;">Hold Ctrl (or Cmd on Mac) to select multiple categories</small>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 15px;">
+                <button type="button" onclick="loadProducts()">Load Products</button>
+            </div>
+        </div>
+
+        <div id="tableContainer" class="table-container">
+            <div class="stats" id="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalProducts">0</div>
+                    <div class="stat-label">Total Products</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="modifiedProducts">0</div>
+                    <div class="stat-label">Modified</div>
+                </div>
+            </div>
+
+            <div class="column-toggle">
+                <strong>Show/Hide Columns:</strong><br>
+                <label><input type="checkbox" class="col-toggle" data-col="ProductId" checked> Product ID</label>
+                <label><input type="checkbox" class="col-toggle" data-col="PLU" checked> PLU</label>
+                <label><input type="checkbox" class="col-toggle" data-col="Name" checked> Name</label>
+                <label><input type="checkbox" class="col-toggle" data-col="POSDisplay" checked> POS Display</label>
+                <label><input type="checkbox" class="col-toggle" data-col="OnlineName"> Online Name</label>
+                <label><input type="checkbox" class="col-toggle" data-col="Category" checked> Category</label>
+                <label><input type="checkbox" class="col-toggle" data-col="IsActive" checked> Is Active</label>
+                <label><input type="checkbox" class="col-toggle" data-col="IsTaxable"> Is Taxable</label>
+                <label><input type="checkbox" class="col-toggle" data-col="KMSDisplay" checked> KMS Display</label>
+                <label><input type="checkbox" class="col-toggle" data-col="TaxPercentage"> Tax %</label>
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table id="productsTable">
+                    <thead id="tableHead"></thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="actions">
+                <button type="button" class="btn-save" onclick="saveAllProducts()">Save All Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://gyguatapi.xchangefusion.com/api/v3/products';
+        const CLIENT_APP_KEY = 'd5f7d501-ffc6-4002-ac7a-f18a8cdd59e4';
+        
+        let allProducts = [];
+        let modifiedProducts = new Set();
+        let allCategories = new Set(); // Store all available categories
+        let categoryToIdMap = new Map(); // Map Category name to CategoryId
+
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+            setTimeout(() => {
+                messageEl.className = 'message';
+            }, 5000);
+        }
+
+        function getHeaders() {
+            return {
+                'Accept': 'application/json',
+                'ClientAppKey': CLIENT_APP_KEY
+            };
+        }
+
+        async function loadCategories() {
+            try {
+                const response = await fetch(API_BASE_URL, {
+                    method: 'GET',
+                    headers: getHeaders()
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.Items) {
+                        // Get unique categories
+                        const categories = new Set();
+                        data.Items.forEach(product => {
+                            if (product.Category) {
+                                categories.add(product.Category);
+                                allCategories.add(product.Category);
+                                // Build category to ID mapping
+                                if (product.CategoryId && !categoryToIdMap.has(product.Category)) {
+                                    categoryToIdMap.set(product.Category, product.CategoryId);
+                                }
+                            }
+                        });
+                        
+                        // Sort alphabetically
+                        const sortedCategories = Array.from(categories).sort();
+                        
+                        // Populate dropdown
+                        const categorySelect = document.getElementById('categoryInput');
+                        categorySelect.innerHTML = '';
+                        sortedCategories.forEach(category => {
+                            const option = document.createElement('option');
+                            option.value = category;
+                            option.textContent = category;
+                            categorySelect.appendChild(option);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                document.getElementById('categoryInput').innerHTML = '<option value="">Error loading categories</option>';
+            }
+        }
+
+        function buildCategoryMap() {
+            // Build category to ID mapping from all loaded products
+            allProducts.forEach(product => {
+                if (product.Category && product.CategoryId && !categoryToIdMap.has(product.Category)) {
+                    categoryToIdMap.set(product.Category, product.CategoryId);
+                }
+            });
+        }
+
+        async function loadProducts() {
+            const pluInput = document.getElementById('pluInput').value.trim();
+            const categorySelect = document.getElementById('categoryInput');
+            const selectedCategories = Array.from(categorySelect.selectedOptions).map(opt => opt.value).filter(v => v);
+            
+            if (!pluInput && selectedCategories.length === 0) {
+                showMessage('Please enter PLUs or select Categories to search', 'error');
+                return;
+            }
+
+            showMessage('Loading products...', 'info');
+            allProducts = [];
+            modifiedProducts.clear();
+
+            try {
+                // If PLUs are provided, fetch by PLU
+                if (pluInput) {
+                    const plus = pluInput.split(/[,\n]/).map(p => p.trim()).filter(p => p);
+                    for (const plu of plus) {
+                        try {
+                            const response = await fetch(`${API_BASE_URL}?PLU=${plu}`, {
+                                method: 'GET',
+                                headers: getHeaders()
+                            });
+                            if (response.ok) {
+                                const data = await response.json();
+                                if (data.Items && data.Items.length > 0) {
+                                    allProducts.push(...data.Items);
+                                }
+                            }
+                        } catch (error) {
+                            console.error(`Error fetching PLU ${plu}:`, error);
+                        }
+                    }
+                }
+
+                // If categories are provided, fetch all and filter
+                if (selectedCategories.length > 0) {
+                    const response = await fetch(API_BASE_URL, {
+                        method: 'GET',
+                        headers: getHeaders()
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.Items) {
+                            const filtered = data.Items.filter(p => 
+                                selectedCategories.includes(p.Category)
+                            );
+                            allProducts.push(...filtered);
+                        }
+                    }
+                }
+
+                // Remove duplicates based on ProductId
+                const uniqueProducts = [];
+                const seenIds = new Set();
+                for (const product of allProducts) {
+                    if (!seenIds.has(product.ProductId)) {
+                        seenIds.add(product.ProductId);
+                        uniqueProducts.push(product);
+                    }
+                }
+                allProducts = uniqueProducts;
+
+                if (allProducts.length === 0) {
+                    showMessage('No products found', 'error');
+                    document.getElementById('tableContainer').style.display = 'none';
+                    return;
+                }
+
+                showMessage(`Loaded ${allProducts.length} products`, 'success');
+                
+                // Update allCategories set and categoryToIdMap with categories from loaded products
+                allProducts.forEach(product => {
+                    if (product.Category) {
+                        allCategories.add(product.Category);
+                        // Map Category to CategoryId (use the first one found for each category)
+                        if (!categoryToIdMap.has(product.Category) && product.CategoryId) {
+                            categoryToIdMap.set(product.Category, product.CategoryId);
+                        }
+                    }
+                });
+                
+                renderTable();
+                updateStats();
+            } catch (error) {
+                showMessage(`Error loading products: ${error.message}`, 'error');
+                console.error('Error:', error);
+            }
+        }
+
+        function renderTable() {
+            const tableHead = document.getElementById('tableHead');
+            const tableBody = document.getElementById('tableBody');
+            
+            // Define all columns
+            const columns = [
+                { key: 'ProductId', label: 'Product ID', type: 'number', readonly: true },
+                { key: 'PLU', label: 'PLU', type: 'number' },
+                { key: 'Name', label: 'Name', type: 'text' },
+                { key: 'POSDisplay', label: 'POS Display', type: 'text' },
+                { key: 'OnlineName', label: 'Online Name', type: 'text' },
+                { key: 'OnlineDescription', label: 'Online Description', type: 'text' },
+                { key: 'Description', label: 'Description', type: 'text' },
+                { key: 'Category', label: 'Category', type: 'text' },
+                { key: 'IsActive', label: 'Is Active', type: 'checkbox' },
+                { key: 'IsMandatory', label: 'Is Mandatory', type: 'checkbox' },
+                { key: 'Templates', label: 'Templates', type: 'text' },
+                { key: 'IsInstruction', label: 'Is Instruction', type: 'checkbox' },
+                { key: 'IndentationLevel', label: 'Indentation Level', type: 'number' },
+                { key: 'IsTaxable', label: 'Is Taxable', type: 'checkbox' },
+                { key: 'Families', label: 'Families', type: 'text' },
+                { key: 'LastChangedDate', label: 'Last Changed', type: 'text', readonly: true },
+                { key: 'ExternalProductID', label: 'External Product ID', type: 'text' },
+                { key: 'ProductInformation', label: 'Product Information', type: 'text' },
+                { key: 'ProductNotes', label: 'Product Notes', type: 'text' },
+                { key: 'CanBeSold', label: 'Can Be Sold', type: 'checkbox' },
+                { key: 'IsRedeemable', label: 'Is Redeemable', type: 'checkbox' },
+                { key: 'AssignSequenceNumber', label: 'Assign Sequence Number', type: 'checkbox' },
+                { key: 'IsRoyaltyProduct', label: 'Is Royalty Product', type: 'checkbox' },
+                { key: 'IsAutoAdd', label: 'Is Auto Add', type: 'checkbox' },
+                { key: 'UnitSize', label: 'Unit Size', type: 'number' },
+                { key: 'SizeTypeID', label: 'Size Type ID', type: 'number' },
+                { key: 'SizeTypeName', label: 'Size Type Name', type: 'text' },
+                { key: 'SizeQty', label: 'Size Qty', type: 'number' },
+                { key: 'GLCode', label: 'GL Code', type: 'text' },
+                { key: 'BackgroundColor', label: 'Background Color', type: 'text' },
+                { key: 'KMSDisplay', label: 'KMS Display', type: 'text' },
+                { key: 'Kilojoules', label: 'Kilojoules', type: 'number' },
+                { key: 'TaxPercentage', label: 'Tax Percentage', type: 'number' },
+                { key: 'HideFromCustomer', label: 'Hide From Customer', type: 'checkbox' },
+                { key: 'IsFractional', label: 'Is Fractional', type: 'checkbox' }
+            ];
+
+            // Build header with resizers
+            tableHead.innerHTML = '<tr>' + columns.map(col => 
+                `<th data-col="${col.key}" style="width: ${getColumnWidth(col.key)}px;">
+                    ${col.label}
+                    <div class="resizer"></div>
+                </th>`
+            ).join('') + '</tr>';
+            
+            // Setup column resizers
+            setupColumnResizers();
+
+            // Build body
+            tableBody.innerHTML = '';
+            allProducts.forEach((product, index) => {
+                const row = document.createElement('tr');
+                row.dataset.index = index;
+                
+                columns.forEach(col => {
+                    const cell = document.createElement('td');
+                    const value = product[col.key];
+                    const colWidth = getColumnWidth(col.key);
+                    cell.style.width = colWidth + 'px';
+                    
+                    if (col.type === 'checkbox') {
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.checked = value || false;
+                        checkbox.addEventListener('change', () => markModified(index));
+                        cell.appendChild(checkbox);
+                    } else if (col.readonly) {
+                        cell.textContent = value || '';
+                        cell.style.color = '#888';
+                    } else {
+                        const input = document.createElement('input');
+                        input.type = col.type === 'number' ? 'number' : 'text';
+                        if (col.type === 'number' && col.key !== 'PLU') {
+                            input.step = col.key.includes('Percentage') || col.key.includes('Size') ? '0.01' : '1';
+                        }
+                        input.value = formatValue(value, col.key);
+                        input.readOnly = col.readonly || false;
+                        input.dataset.columnKey = col.key;
+                        input.dataset.rowIndex = index;
+                        input.addEventListener('input', () => markModified(index));
+                        
+                        // Special handling for Category field - update CategoryId when Category changes (for internal use)
+                        if (col.key === 'Category') {
+                            input.addEventListener('input', function() {
+                                // CategoryId is handled internally, no UI update needed
+                                const rowElement = this.closest('tr');
+                                if (rowElement) {
+                                    const rowIdx = parseInt(rowElement.dataset.index);
+                                    markModified(rowIdx);
+                                }
+                            });
+                        }
+                        
+                        // Auto-fill POSDisplay and KMSDisplay with Name if empty
+                        if (col.key === 'Name') {
+                            input.addEventListener('input', function() {
+                                const rowElement = this.closest('tr');
+                                if (!rowElement) return;
+                                
+                                const nameValue = this.value.trim();
+                                const posDisplayInput = rowElement.querySelector('input[data-column-key="POSDisplay"]');
+                                const kmsDisplayInput = rowElement.querySelector('input[data-column-key="KMSDisplay"]');
+                                
+                                // Update POSDisplay if empty
+                                if (posDisplayInput && (!posDisplayInput.value || posDisplayInput.value.trim() === '')) {
+                                    posDisplayInput.value = nameValue;
+                                    const rowIdx = parseInt(rowElement.dataset.index);
+                                    markModified(rowIdx);
+                                }
+                                
+                                // Update KMSDisplay if empty (but ensure it's at least 3 chars)
+                                if (kmsDisplayInput && (!kmsDisplayInput.value || kmsDisplayInput.value.trim() === '')) {
+                                    if (nameValue.length >= 3) {
+                                        kmsDisplayInput.value = nameValue;
+                                        const rowIdx = parseInt(rowElement.dataset.index);
+                                        markModified(rowIdx);
+                                    }
+                                }
+                            });
+                        }
+                        
+                        // KMSDisplay is required by API - must be at least 3 characters
+                        // If left empty, will default to "N/A"
+                        if (col.key === 'KMSDisplay') {
+                            input.minLength = 3;
+                            input.placeholder = 'Required (min 3 chars) - defaults to "N/A" if empty';
+                        }
+                        cell.appendChild(input);
+                    }
+                    
+                    row.appendChild(cell);
+                });
+                
+                tableBody.appendChild(row);
+            });
+
+            // Setup column toggles
+            setupColumnToggles();
+            document.getElementById('tableContainer').style.display = 'block';
+        }
+
+        function formatValue(value, key) {
+            if (value === null || value === undefined) return '';
+            if (Array.isArray(value)) {
+                return value.join(',');
+            }
+            if (typeof value === 'object') {
+                return JSON.stringify(value);
+            }
+            return value.toString();
+        }
+
+        function markModified(index) {
+            modifiedProducts.add(index);
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('totalProducts').textContent = allProducts.length;
+            document.getElementById('modifiedProducts').textContent = modifiedProducts.size;
+        }
+
+        function setupColumnToggles() {
+            const toggles = document.querySelectorAll('.col-toggle');
+            toggles.forEach(toggle => {
+                toggle.addEventListener('change', function() {
+                    const col = this.dataset.col;
+                    const cells = document.querySelectorAll(`th[data-col="${col}"], td:nth-child(${getColumnIndex(col) + 1})`);
+                    cells.forEach(cell => {
+                        cell.style.display = this.checked ? '' : 'none';
+                    });
+                });
+            });
+        }
+
+        function getColumnIndex(colKey) {
+            const headers = Array.from(document.querySelectorAll('th[data-col]'));
+            return headers.findIndex(th => th.dataset.col === colKey);
+        }
+
+        function getColumnWidth(colKey) {
+            // Default widths for different column types
+            const widths = {
+                'ProductId': 100,
+                'PLU': 80,
+                'Name': 150,
+                'POSDisplay': 120,
+                'OnlineName': 120,
+                'OnlineDescription': 200,
+                'Description': 200,
+                'Category': 120,
+                'IsActive': 80,
+                'IsMandatory': 100,
+                'Templates': 100,
+                'IsInstruction': 110,
+                'IndentationLevel': 130,
+                'IsTaxable': 90,
+                'Families': 100,
+                'LastChangedDate': 150,
+                'ExternalProductID': 130,
+                'ProductInformation': 150,
+                'ProductNotes': 150,
+                'CanBeSold': 90,
+                'IsRedeemable': 110,
+                'AssignSequenceNumber': 150,
+                'IsRoyaltyProduct': 130,
+                'IsAutoAdd': 90,
+                'UnitSize': 90,
+                'SizeTypeID': 100,
+                'SizeTypeName': 120,
+                'SizeQty': 90,
+                'GLCode': 100,
+                'BackgroundColor': 120,
+                'KMSDisplay': 120,
+                'Kilojoules': 100,
+                'TaxPercentage': 120,
+                'HideFromCustomer': 130,
+                'IsFractional': 110
+            };
+            return widths[colKey] || 120;
+        }
+
+        function setupColumnResizers() {
+            const headers = document.querySelectorAll('th');
+            let currentResizer = null;
+            let startX = 0;
+            let startWidth = 0;
+            let currentHeader = null;
+
+            headers.forEach(header => {
+                const resizer = header.querySelector('.resizer');
+                if (!resizer) return;
+
+                resizer.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    currentResizer = resizer;
+                    currentHeader = header;
+                    startX = e.pageX;
+                    startWidth = header.offsetWidth;
+                    
+                    header.classList.add('resizing');
+                    document.body.style.cursor = 'col-resize';
+                    document.body.style.userSelect = 'none';
+
+                    const handleMouseMove = (e) => {
+                        if (!currentHeader) return;
+                        const diff = e.pageX - startX;
+                        const newWidth = Math.max(80, startWidth + diff); // Minimum width 80px
+                        currentHeader.style.width = newWidth + 'px';
+                        
+                        // Update all cells in this column
+                        const allHeaders = Array.from(document.querySelectorAll('th'));
+                        const colIndex = allHeaders.indexOf(currentHeader) + 1;
+                        const cells = document.querySelectorAll(`td:nth-child(${colIndex})`);
+                        cells.forEach(cell => {
+                            cell.style.width = newWidth + 'px';
+                        });
+                    };
+
+                    const handleMouseUp = () => {
+                        if (currentHeader) {
+                            currentHeader.classList.remove('resizing');
+                        }
+                        currentResizer = null;
+                        currentHeader = null;
+                        document.body.style.cursor = '';
+                        document.body.style.userSelect = '';
+                        document.removeEventListener('mousemove', handleMouseMove);
+                        document.removeEventListener('mouseup', handleMouseUp);
+                    };
+
+                    document.addEventListener('mousemove', handleMouseMove);
+                    document.addEventListener('mouseup', handleMouseUp);
+                });
+            });
+        }
+
+        function getProductData(rowIndex) {
+            const row = document.querySelector(`tr[data-index="${rowIndex}"]`);
+            const product = { ...allProducts[rowIndex] };
+            // Immediately exclude Templates, Families, DietaryTags, and UniversalTags to prevent foreign key errors
+            delete product.Templates;
+            delete product.Families;
+            delete product.DietaryTags;
+            delete product.UniversalTags;
+            const cells = row.querySelectorAll('td');
+            
+            const columns = [
+                'ProductId', 'PLU', 'Name', 'POSDisplay', 'OnlineName', 'OnlineDescription', 'Description',
+                'Category', 'IsActive', 'IsMandatory', 'Templates', 'IsInstruction',
+                'IndentationLevel', 'IsTaxable', 'Families', 'LastChangedDate', 'ExternalProductID',
+                'ProductInformation', 'ProductNotes', 'CanBeSold', 'IsRedeemable', 'AssignSequenceNumber',
+                'IsRoyaltyProduct', 'IsAutoAdd', 'UnitSize', 'SizeTypeID', 'SizeTypeName', 'SizeQty',
+                'GLCode', 'BackgroundColor', 'KMSDisplay', 'Kilojoules', 'TaxPercentage',
+                'HideFromCustomer', 'IsFractional'
+            ];
+
+            columns.forEach((key, idx) => {
+                const cell = cells[idx];
+                if (!cell) {
+                    console.warn(`Cell not found for column ${key} at index ${idx}`);
+                    return;
+                }
+                if (key === 'IsActive' || key === 'IsMandatory' || key === 'IsInstruction' || 
+                    key === 'IsTaxable' || key === 'CanBeSold' || key === 'IsRedeemable' ||
+                    key === 'AssignSequenceNumber' || key === 'IsRoyaltyProduct' || key === 'IsAutoAdd' ||
+                    key === 'HideFromCustomer' || key === 'IsFractional') {
+                    const checkbox = cell.querySelector('input[type="checkbox"]');
+                    product[key] = checkbox ? checkbox.checked : false;
+                } else if (key === 'ProductId' || key === 'LastChangedDate') {
+                    // Read-only fields, keep original
+                } else {
+                    const input = cell.querySelector('input');
+                    if (input) {
+                        const value = input.value.trim();
+                        if (key === 'PLU') {
+                            product[key] = parseInt(value) || product[key];
+                        } else if (key === 'IndentationLevel' || key === 'SizeTypeID') {
+                            product[key] = value ? parseInt(value) : null;
+                        } else if (key === 'UnitSize' || key === 'SizeQty' || key === 'Kilojoules' || key === 'TaxPercentage') {
+                            product[key] = value ? parseFloat(value) : null;
+                        } else if (key === 'Templates' || key === 'Families') {
+                            // Always exclude Templates and Families to avoid foreign key errors
+                            // These fields often have invalid IDs that cause FK constraint violations
+                            delete product[key];
+                        } else {
+                            product[key] = value || null;
+                        }
+                    }
+                }
+            });
+
+            // Auto-fill POSDisplay and KMSDisplay with Name if empty
+            if (!product.POSDisplay || product.POSDisplay.trim() === '') {
+                product.POSDisplay = product.Name || '';
+            }
+            
+            // KMSDisplay is required by the API - must have at least 3 characters
+            // If empty or too short, use Name if it's 3+ chars, otherwise use 'N/A'
+            if (!product.KMSDisplay || product.KMSDisplay.trim().length < 3) {
+                if (product.Name && product.Name.trim().length >= 3) {
+                    product.KMSDisplay = product.Name.trim();
+                } else {
+                    product.KMSDisplay = 'N/A';
+                }
+            } else {
+                // Ensure it's trimmed
+                product.KMSDisplay = product.KMSDisplay.trim();
+            }
+            
+            // Set CategoryId based on Category (for API, but not shown in UI)
+            if (product.Category && categoryToIdMap.has(product.Category)) {
+                product.CategoryId = categoryToIdMap.get(product.Category);
+            }
+
+            // Validate Category if it was changed
+            if (product.Category && allCategories.size > 0 && !allCategories.has(product.Category)) {
+                throw new Error(`Product ${product.PLU}: Category "${product.Category}" does not exist. Please use an existing category from the dropdown.`);
+            }
+
+            // Always exclude Templates, Families, DietaryTags, and UniversalTags to avoid foreign key errors
+            // These fields often have invalid IDs that cause FK constraint violations
+            delete product.Templates;
+            delete product.Families;
+            // Exclude DietaryTags and UniversalTags to avoid foreign key constraint errors
+            // These often have invalid tag IDs that cause FK constraint violations
+            if (product.DietaryTags) {
+                delete product.DietaryTags;
+            }
+            if (product.UniversalTags) {
+                delete product.UniversalTags;
+            }
+
+            // Remove null values
+            Object.keys(product).forEach(key => {
+                if (product[key] === null || product[key] === '') {
+                    delete product[key];
+                }
+            });
+
+            return product;
+        }
+
+        async function saveAllProducts() {
+            if (modifiedProducts.size === 0) {
+                showMessage('No products have been modified', 'info');
+                return;
+            }
+
+            const productsToSave = Array.from(modifiedProducts).map(idx => {
+                try {
+                    return getProductData(idx);
+                } catch (error) {
+                    showMessage(error.message, 'error');
+                    throw error;
+                }
+            });
+
+            showMessage(`Saving ${productsToSave.length} products...`, 'info');
+
+            let successCount = 0;
+            let errorCount = 0;
+            const errors = [];
+
+            for (const product of productsToSave) {
+                try {
+                    const formBody = Object.keys(product).map(key => {
+                        const value = product[key];
+                        if (Array.isArray(value)) {
+                            return `${key}=${encodeURIComponent(JSON.stringify(value))}`;
+                        } else if (typeof value === 'object' && value !== null) {
+                            return `${key}=${encodeURIComponent(JSON.stringify(value))}`;
+                        } else {
+                            return `${key}=${encodeURIComponent(value)}`;
+                        }
+                    }).join('&');
+
+                    const response = await fetch(API_BASE_URL, {
+                        method: 'PUT',
+                        headers: {
+                            ...getHeaders(),
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: formBody
+                    });
+
+                    if (response.ok) {
+                        successCount++;
+                    } else {
+                        const errorText = await response.text();
+                        let errorMessage = `Product PLU ${product.PLU} (${product.Name || 'Unknown'}): `;
+                        
+                        try {
+                            const errorJson = JSON.parse(errorText);
+                            if (errorJson.Message) {
+                                errorMessage += errorJson.Message;
+                                
+                                // Check for common errors
+                                if (errorJson.Message.includes('FOREIGN KEY constraint')) {
+                                    if (errorJson.Message.includes('Templates')) {
+                                        errorMessage += ' - Templates field has invalid foreign key reference.';
+                                    } else if (errorJson.Message.includes('Families') || errorJson.Message.includes('TerminalProductFamily')) {
+                                        errorMessage += ' - Families field has invalid foreign key reference. Families are automatically excluded to prevent this error.';
+                                    } else if (errorJson.Message.includes('DietaryTags') || errorJson.Message.includes('TerminalDietaryTags')) {
+                                        errorMessage += ' - DietaryTags field has invalid foreign key reference. DietaryTags are automatically excluded to prevent this error.';
+                                    } else if (errorJson.Message.includes('UniversalTags') || errorJson.Message.includes('TerminalUniversalTags')) {
+                                        errorMessage += ' - UniversalTags field has invalid foreign key reference. UniversalTags are automatically excluded to prevent this error.';
+                                    } else if (errorJson.Message.includes('Category')) {
+                                        errorMessage += ' - Category field has invalid foreign key reference. The category may not exist.';
+                                    } else {
+                                        errorMessage += ' - Foreign key constraint violation. Check Templates, Families, DietaryTags, UniversalTags, or Category fields.';
+                                    }
+                                } else if (errorJson.Message.includes('KMSDisplay')) {
+                                    errorMessage += ' - KMS Display must be at least 3 characters.';
+                                } else if (errorJson.Message.toLowerCase().includes('category')) {
+                                    errorMessage += ' - Category validation error. Please use an existing category.';
+                                }
+                            } else {
+                                errorMessage += errorText;
+                            }
+                        } catch (e) {
+                            errorMessage += `HTTP ${response.status}: ${errorText}`;
+                        }
+                        
+                        errors.push(errorMessage);
+                        console.error(`Error saving product ${product.PLU}:`, errorText);
+                        errorCount++;
+                    }
+                } catch (error) {
+                    const errorMessage = `Product PLU ${product.PLU} (${product.Name || 'Unknown'}): ${error.message}`;
+                    errors.push(errorMessage);
+                    console.error(`Error saving product ${product.PLU}:`, error);
+                    errorCount++;
+                }
+            }
+
+            if (errorCount === 0) {
+                showMessage(`Successfully saved ${successCount} products!`, 'success');
+                modifiedProducts.clear();
+                updateStats();
+            } else {
+                let errorMsg = `Saved ${successCount} products, ${errorCount} errors occurred:\n\n`;
+                errorMsg += errors.join('\n\n');
+                if (errors.length > 5) {
+                    errorMsg = `Saved ${successCount} products, ${errorCount} errors occurred.\n\nFirst 5 errors:\n\n` + errors.slice(0, 5).join('\n\n');
+                    errorMsg += `\n\n... and ${errors.length - 5} more errors. Check console for details.`;
+                }
+                showMessage(errorMsg, 'error');
+            }
+        }
+
+        // Load categories when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            loadCategories();
+        });
+    </script>
+</body>
+</html>
+
