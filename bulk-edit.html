@@ -216,6 +216,19 @@
             border-radius: 4px;
             color: #e0e0e0;
             font-size: 12px;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        input[type="text"].changed,
+        input[type="number"].changed {
+            background: #2a3a2e;
+            border: 2px solid #4a9eff;
+            box-shadow: 0 0 5px rgba(74, 158, 255, 0.3);
+        }
+
+        input[type="checkbox"].changed {
+            outline: 2px solid #4a9eff;
+            outline-offset: 2px;
         }
 
         select option {
@@ -311,8 +324,9 @@
                     <small style="color: #b0b0b0; margin-top: 5px; display: block;">Hold Ctrl (or Cmd on Mac) to select multiple categories</small>
                 </div>
             </div>
-            <div style="text-align: center; margin-top: 15px;">
+            <div style="text-align: center; margin-top: 15px; display: flex; gap: 15px; justify-content: center;">
                 <button type="button" onclick="loadProducts()">Load Products</button>
+                <button type="button" onclick="clearSelection()" style="background: #6c757d;">Clear</button>
             </div>
         </div>
 
@@ -351,6 +365,7 @@
 
             <div class="actions">
                 <button type="button" class="btn-save" onclick="saveAllProducts()">Save All Changes</button>
+                <button type="button" onclick="revertChanges()" style="background: #dc3545; padding: 15px 40px; font-size: 18px;">Revert Changes</button>
             </div>
         </div>
     </div>
@@ -363,6 +378,7 @@
         let modifiedProducts = new Set();
         let allCategories = new Set(); // Store all available categories
         let categoryToIdMap = new Map(); // Map Category name to CategoryId
+        let originalValues = new Map(); // Store original values for comparison
 
         function showMessage(text, type) {
             const messageEl = document.getElementById('message');
@@ -429,6 +445,27 @@
                     categoryToIdMap.set(product.Category, product.CategoryId);
                 }
             });
+        }
+
+        function clearSelection() {
+            // Clear PLU input
+            document.getElementById('pluInput').value = '';
+            
+            // Clear category selection
+            const categorySelect = document.getElementById('categoryInput');
+            Array.from(categorySelect.selectedOptions).forEach(option => {
+                option.selected = false;
+            });
+            
+            // Clear the table
+            allProducts = [];
+            modifiedProducts.clear();
+            document.getElementById('tableContainer').style.display = 'none';
+            
+            // Update stats
+            updateStats();
+            
+            showMessage('Selection cleared', 'info');
         }
 
         async function loadProducts() {
@@ -592,7 +629,15 @@
                         const checkbox = document.createElement('input');
                         checkbox.type = 'checkbox';
                         checkbox.checked = value || false;
-                        checkbox.addEventListener('change', () => markModified(index));
+                        checkbox.dataset.columnKey = col.key;
+                        checkbox.dataset.rowIndex = index;
+                        
+                        // Store original value for comparison
+                        originalValues.set(`${index}_${col.key}`, value || false);
+                        
+                        checkbox.addEventListener('change', function() {
+                            markModified(index, col.key);
+                        });
                         cell.appendChild(checkbox);
                     } else if (col.readonly) {
                         cell.textContent = value || '';
@@ -607,7 +652,13 @@
                         input.readOnly = col.readonly || false;
                         input.dataset.columnKey = col.key;
                         input.dataset.rowIndex = index;
-                        input.addEventListener('input', () => markModified(index));
+                        
+                        // Store original value for comparison
+                        originalValues.set(`${index}_${col.key}`, formatValue(value, col.key));
+                        
+                        input.addEventListener('input', function() {
+                            markModified(index, col.key);
+                        });
                         
                         // Special handling for Category field - update CategoryId when Category changes (for internal use)
                         if (col.key === 'Category') {
@@ -616,7 +667,7 @@
                                 const rowElement = this.closest('tr');
                                 if (rowElement) {
                                     const rowIdx = parseInt(rowElement.dataset.index);
-                                    markModified(rowIdx);
+                                    markModified(rowIdx, col.key);
                                 }
                             });
                         }
@@ -628,22 +679,23 @@
                                 if (!rowElement) return;
                                 
                                 const nameValue = this.value.trim();
+                                const rowIdx = parseInt(rowElement.dataset.index);
+                                markModified(rowIdx, col.key);
+                                
                                 const posDisplayInput = rowElement.querySelector('input[data-column-key="POSDisplay"]');
                                 const kmsDisplayInput = rowElement.querySelector('input[data-column-key="KMSDisplay"]');
                                 
                                 // Update POSDisplay if empty
                                 if (posDisplayInput && (!posDisplayInput.value || posDisplayInput.value.trim() === '')) {
                                     posDisplayInput.value = nameValue;
-                                    const rowIdx = parseInt(rowElement.dataset.index);
-                                    markModified(rowIdx);
+                                    markModified(rowIdx, 'POSDisplay');
                                 }
                                 
                                 // Update KMSDisplay if empty (but ensure it's at least 3 chars)
                                 if (kmsDisplayInput && (!kmsDisplayInput.value || kmsDisplayInput.value.trim() === '')) {
                                     if (nameValue.length >= 3) {
                                         kmsDisplayInput.value = nameValue;
-                                        const rowIdx = parseInt(rowElement.dataset.index);
-                                        markModified(rowIdx);
+                                        markModified(rowIdx, 'KMSDisplay');
                                     }
                                 }
                             });
@@ -680,14 +732,90 @@
             return value.toString();
         }
 
-        function markModified(index) {
+        function markModified(index, fieldKey = null) {
             modifiedProducts.add(index);
             updateStats();
+            
+            // Highlight the changed field
+            if (fieldKey !== null) {
+                const row = document.querySelector(`tr[data-index="${index}"]`);
+                if (row) {
+                    const input = row.querySelector(`input[data-column-key="${fieldKey}"], input[type="checkbox"][data-column-key="${fieldKey}"]`);
+                    if (input) {
+                        // Check if value actually changed
+                        const originalValue = originalValues.get(`${index}_${fieldKey}`);
+                        let currentValue;
+                        
+                        if (input.type === 'checkbox') {
+                            currentValue = input.checked;
+                        } else {
+                            currentValue = input.value.trim();
+                        }
+                        
+                        if (originalValue !== currentValue) {
+                            input.classList.add('changed');
+                        } else {
+                            input.classList.remove('changed');
+                        }
+                    }
+                }
+            }
         }
 
         function updateStats() {
             document.getElementById('totalProducts').textContent = allProducts.length;
             document.getElementById('modifiedProducts').textContent = modifiedProducts.size;
+        }
+
+        function revertChanges() {
+            if (modifiedProducts.size === 0) {
+                showMessage('No changes to revert', 'info');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to revert all changes? This will restore ${modifiedProducts.size} product(s) to their original values.`)) {
+                return;
+            }
+
+            // Revert each modified product
+            modifiedProducts.forEach(index => {
+                const row = document.querySelector(`tr[data-index="${index}"]`);
+                if (!row) return;
+
+                const product = allProducts[index];
+                if (!product) return;
+
+                // Get all inputs and checkboxes in the row
+                const inputs = row.querySelectorAll('input[data-column-key]');
+                const checkboxes = row.querySelectorAll('input[type="checkbox"][data-column-key]');
+
+                // Restore text/number inputs
+                inputs.forEach(input => {
+                    const fieldKey = input.dataset.columnKey;
+                    const originalValue = originalValues.get(`${index}_${fieldKey}`);
+                    
+                    if (originalValue !== undefined) {
+                        input.value = formatValue(originalValue, fieldKey);
+                        input.classList.remove('changed');
+                    }
+                });
+
+                // Restore checkboxes
+                checkboxes.forEach(checkbox => {
+                    const fieldKey = checkbox.dataset.columnKey;
+                    const originalValue = originalValues.get(`${index}_${fieldKey}`);
+                    
+                    if (originalValue !== undefined) {
+                        checkbox.checked = originalValue;
+                        checkbox.classList.remove('changed');
+                    }
+                });
+            });
+
+            // Clear modified products tracking
+            modifiedProducts.clear();
+            updateStats();
+            showMessage('All changes have been reverted', 'success');
         }
 
         function setupColumnToggles() {
